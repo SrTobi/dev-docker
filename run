@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e
+shopt -s expand_aliases
+
+NAME=""
+
+for arg in "$@"
+do
+    if [ "$arg" == "--new" ]; then
+        NEW=ture
+    elif [ "$arg" == "--gpus" ]; then
+        GPUS=ture
+    elif [ "$arg" == -* ]; then
+        echo "Unknown option $arg"
+        exit 1
+    else
+        if [ "$NAME" != "" ]; then
+            echo "Cannot supply multiple container names"
+            exit 1
+        fi
+
+        NAME="$arg"
+    fi
+done
+
+if [ -z $NAME ]
+  then
+    echo "No container name supplied"
+    exit 1
+fi
+
+if [ -v NEW ]; then
+    DOCKER_BUILDKIT=1 docker build -t dev .
+
+    if [ -v GPUS ]; then
+        docker run --gpus all --hostname=$NAME --name $NAME -it dev
+    else
+        docker run --hostname=$NAME --name $NAME -it dev
+    fi
+else
+    docker start -ia $NAME
+fi
