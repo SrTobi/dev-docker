@@ -46,9 +46,5 @@ RUN echo "source ~/.config/zsh-config/zshrc" > .zshrc
 ADD gitconfig .gitconfig
 RUN sudo chown dev:dev .gitconfig
 
-# Setup .ssh
-ADD ssh .ssh
-RUN sudo chown -R dev:dev .ssh
-
 CMD zsh
 
