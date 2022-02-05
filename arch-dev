@@ -44,9 +44,20 @@ if [ -v NEW ]; then
     DOCKER_BUILDKIT=1 docker build -t $NAME-img .
 
     if [ -v GPUS ]; then
-        docker run -p 2222:22--gpus all --hostname=$NAME --name $NAME -d -it $NAME-img
+        docker run \
+            -p 2222:22 \
+            --gpus all \
+            --hostname=$NAME --name $NAME \
+            -d -it \
+            --mount type=bind,source=$HOME/.ssh,target=/home/ddev/.ssh \
+            $NAME-img
     else
-        docker run -p 2222:22 --hostname=$NAME --name $NAME -d -it $NAME-img
+        docker run \
+            -p 2222:22 \
+            --hostname=$NAME --name $NAME \
+            -d -it \
+            --mount type=bind,source=$HOME/.ssh,target=/home/ddev/.ssh \
+            $NAME-img
     fi
 elif [ -v RM ]; then
     docker stop -t 0 $NAME > /dev/null
