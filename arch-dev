@@ -85,7 +85,7 @@ else
     
     connect_ssh
 
-    if [ $? ]; then
+    if [[ "$?" != "0" ]]; then
         sleep .5
         connect_ssh
     fi
