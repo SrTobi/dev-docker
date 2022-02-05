@@ -10,6 +10,12 @@ do
         NEW=ture
     elif [ "$arg" == "--gpus" ]; then
         GPUS=ture
+    elif [ "$arg" == "--attach" ]; then
+        ATTACH=true
+    elif [ "$arg" == "--stop" ]; then
+        STOP=true
+    elif [ "$arg" == "--rm" ]; then
+        RM=true
     elif [ "$arg" == -* ]; then
         echo "Unknown option $arg"
         exit 1
@@ -33,10 +39,38 @@ if [ -v NEW ]; then
     DOCKER_BUILDKIT=1 docker build -t $NAME-img .
 
     if [ -v GPUS ]; then
-        docker run -p 2222:22 --gpus all --hostname=$NAME --name $NAME -it $NAME-img
+        docker run -p 2222:22--gpus all --hostname=$NAME --name $NAME -d -it $NAME-img
     else
-        docker run -p 2222:22 --hostname=$NAME --name $NAME -it $NAME-img
+        docker run -p 2222:22 --hostname=$NAME --name $NAME -d -it $NAME-img
     fi
+elif [ -v RM ]; then
+    docker stop -t 0 $NAME > /dev/null
+    docker rm $NAME > /dev/null
+    exit
+elif [ -v STOP ]; then
+    docker stop -t 0 $NAME > /dev/null
+    exit
 else
-    docker start -ia $NAME
+    docker start $NAME > /dev/null
+fi
+
+if [ -v ATTACH ]; then
+    echo "Directly attach to $NAME. Exit via Ctrl-p + Ctrl+q"
+    docker attach $NAME
+else
+    set +e
+    echo "Connect to $NAME via ssh."
+    function connect_ssh {
+        ssh ddev@localhost -p 2222 -q \
+            -o "StrictHostKeyChecking=no" \
+            -o "UserKnownHostsFile=/dev/null"
+        return $?
+    }
+    
+    connect_ssh
+
+    if [ $? ]; then
+        sleep .5
+        connect_ssh
+    fi
 fi
