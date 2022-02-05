@@ -38,7 +38,7 @@ use_python() {
 fpath+=${ZSH_CUSTOM}/completions
 
 # Start or reuse ssh-agent
-SSH_TMP_PATH="/tmp/ssh-agent-store/$USER-ssh.things"
+SSH_TMP_PATH="/tmp/ssh-agent-store/$(whoami)-ssh.things"
 if ! pgrep -u "$(whoami)" ssh-agent > /dev/null; then
 	mkdir -p $(dirname $SSH_TMP_PATH)
     ssh-agent > $SSH_TMP_PATH

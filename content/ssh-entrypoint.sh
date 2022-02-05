@@ -8,7 +8,7 @@ if [ ! -f /etc/ssh/ssh_host_rsa_key ] ; then
     sudo ssh-keygen -t dsa -f /etc/ssh/ssh_host_ed25519_key -q -N ""
 fi
 
-if [ "$@" = ""]; then
+if [[ "$@" = "" ]]; then
     sudo /bin/sshd -D
 else
     sudo /bin/sshd -D &

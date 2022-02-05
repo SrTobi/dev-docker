@@ -43,16 +43,16 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
 
 # Setup zsh
 RUN mkdir -p .config/zsh-config
-ADD zsh-config .config/zsh-config
+ADD content/zsh-config .config/zsh-config
 RUN sudo chown -R ddev:ddev .config/zsh-config
 RUN echo "source ~/.config/zsh-config/zshrc" > .zshrc
 
 # Setup git
-ADD gitconfig .gitconfig
+ADD content/gitconfig .gitconfig
 RUN sudo chown ddev:ddev .gitconfig
 
 # Setup ssh
 RUN sudo sh -c "echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config"
-ADD ssh-entrypoint.sh /run/entrypoint.sh
+ADD content/ssh-entrypoint.sh /run/entrypoint.sh
 
 ENTRYPOINT ["/run/entrypoint.sh"]
