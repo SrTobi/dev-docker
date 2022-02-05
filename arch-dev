@@ -32,6 +32,11 @@ done
 if [ -z $NAME ]
   then
     echo "No container name supplied"
+    echo
+    docker images
+    echo
+    docker ps -a
+    echo
     exit 1
 fi
 
