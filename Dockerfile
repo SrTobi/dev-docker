@@ -8,7 +8,7 @@ RUN echo 'Server = https://mirror.pkgbuild.com/$repo/os/$arch' > /etc/pacman.d/m
 # install packages
 RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
     pacman -Suy --noconfirm --needed \
-        base base-devel cuda \
+        base base-devel \
         zsh openssh git vim
 
 
