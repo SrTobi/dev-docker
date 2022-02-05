@@ -18,33 +18,41 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 # Create user
-RUN useradd -ms /bin/zsh dev
-RUN passwd -d dev
-RUN echo 'dev ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/dev
+RUN useradd -ms /bin/zsh ddev
+RUN passwd -d ddev
+RUN echo "ddev ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ddev
 
-USER dev
-WORKDIR /home/dev
+USER ddev
+WORKDIR /home/ddev
 
-RUN mkdir -p /home/dev/.gnupg && \
-    echo 'standard-resolver' > /home/dev/.gnupg/dirmngr.conf
+RUN mkdir -p /home/ddev/.gnupg && \
+    echo 'standard-resolver' > /home/ddev/.gnupg/dirmngr.conf
 
 # Setup paru
-RUN git clone --depth 1 https://aur.archlinux.org/paru.git && \
+RUN git clone --depth 1 https://aur.archlinux.org/paru.git
+RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
     cd paru && \
     makepkg --noconfirm -si && \
-    cd .. && \
-    rm -rf paru
+    cd ..
+RUN rm -rf paru
+
+# Install oh-my-zsh and additional stuff
+RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
+    paru --noconfirm -S \
+        oh-my-zsh-git kitty-terminfo
 
 # Setup zsh
-RUN paru --noconfirm -S oh-my-zsh-git
 RUN mkdir -p .config/zsh-config
 ADD zsh-config .config/zsh-config
-RUN sudo chown -R dev:dev .config/zsh-config
+RUN sudo chown -R ddev:ddev .config/zsh-config
 RUN echo "source ~/.config/zsh-config/zshrc" > .zshrc
 
 # Setup git
 ADD gitconfig .gitconfig
-RUN sudo chown dev:dev .gitconfig
+RUN sudo chown ddev:ddev .gitconfig
 
-CMD zsh
+# Setup ssh
+RUN sudo sh -c "echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config"
+ADD ssh-entrypoint.sh /run/entrypoint.sh
 
+ENTRYPOINT ["/run/entrypoint.sh"]

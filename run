@@ -30,12 +30,12 @@ if [ -z $NAME ]
 fi
 
 if [ -v NEW ]; then
-    DOCKER_BUILDKIT=1 docker build -t dev .
+    DOCKER_BUILDKIT=1 docker build -t $NAME-img .
 
     if [ -v GPUS ]; then
-        docker run --gpus all --hostname=$NAME --name $NAME -it dev
+        docker run -p 2222:22 --gpus all --hostname=$NAME --name $NAME -it $NAME-img
     else
-        docker run --hostname=$NAME --name $NAME -it dev
+        docker run -p 2222:22 --hostname=$NAME --name $NAME -it $NAME-img
     fi
 else
     docker start -ia $NAME
