@@ -29,7 +29,7 @@ RUN mkdir -p /home/ddev/.gnupg && \
     echo 'standard-resolver' > /home/ddev/.gnupg/dirmngr.conf
 
 # Setup paru
-RUN git clone --depth 1 https://aur.archlinux.org/paru.git
+RUN git clone --depth 1 https://aur.archlinux.org/paru-bin.git paru
 #RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
 RUN cd paru && \
     makepkg --noconfirm -si && \
