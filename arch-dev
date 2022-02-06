@@ -2,32 +2,77 @@
 set -e
 shopt -s expand_aliases
 
+function print_help {
+    echo "Syntax: [options] instance-name [docker-run options]"
+    echo
+    echo "Options:"
+    echo "  -n, --new      Creates a new container."
+    echo "  -a, --attach   Attach to the container instead of using ssh."
+    echo "  -s, --stop     Stops the container."
+    echo "  -d, --delete   Stops and deletes the container."
+    echo "  -v, --verbose  Print additional debug information."
+    echo "  -h, --help     Show this help."
+    echo
+}
+
 NAME=""
+ADDITIONAL_ARGS=()
 
-for arg in "$@"
-do
-    if [ "$arg" == "--new" ]; then
-        NEW=ture
-    elif [ "$arg" == "--gpus" ]; then
-        GPUS=ture
-    elif [ "$arg" == "--attach" ]; then
-        ATTACH=true
-    elif [ "$arg" == "--stop" ]; then
-        STOP=true
-    elif [ "$arg" == "--rm" ]; then
-        RM=true
-    elif [ "$arg" == -* ]; then
-        echo "Unknown option $arg"
-        exit 1
+while [[ $# -gt 0 ]]; do
+    if [ "$NAME" != "" ]; then
+        ADDITIONAL_ARGS+=("$1")
+        shift
     else
-        if [ "$NAME" != "" ]; then
-            echo "Cannot supply multiple container names"
-            exit 1
-        fi
-
-        NAME="$arg"
+        case $1 in
+            -n|--new)
+                NEW=ture
+                shift
+                ;;
+            -a|--attach)
+                ATTACH=true
+                shift
+                ;;
+            -s|--stop)
+                STOP=true
+                shift
+                ;;
+            -d|--delete)
+                DELETE=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                print_help
+                exit 0
+                ;;
+            -*|--*)
+                echo "Unknown option $1"
+                print_help
+                exit 1
+                ;;
+            *)
+                NAME="$1"
+                shift
+                ;;
+        esac
     fi
 done
+
+function debug {
+    if [ -v VERBOSE ]; then
+        echo "$@"
+    fi
+}
+
+debug "NAME=$NAME"
+debug "NEW=$NEW"
+debug "ATTACH=$ATTACH"
+debug "DELETE=$DELETE"
+debug "STOP=$STOP"
+debug "Additional args=${ADDITIONAL_ARGS[@]}"
 
 if [ -z $NAME ]
   then
@@ -41,43 +86,59 @@ if [ -z $NAME ]
 fi
 
 if [ -v NEW ]; then
+    debug "Running docker run"
     DOCKER_BUILDKIT=1 docker build -t $NAME-img .
-
-    if [ -v GPUS ]; then
-        docker run \
-            -p 2222:22 \
-            --gpus all \
-            --hostname=$NAME --name $NAME \
-            -d -it \
-            --mount type=bind,source=$HOME/.ssh,target=/home/ddev/.ssh \
-            $NAME-img
+    REGEX=" -p[ 0-9]+:22 "
+    if [[ " ${ADDITIONAL_ARGS[@]} " =~ $REGEX ]]; then
+        debug "Detected specific portforwarding to ssh. Do not add default forwarding 2222:22."
     else
-        docker run \
-            -p 2222:22 \
-            --hostname=$NAME --name $NAME \
-            -d -it \
-            --mount type=bind,source=$HOME/.ssh,target=/home/ddev/.ssh \
-            $NAME-img
+        debug "Detected no specific portforwarding to ssh. Add 2222:22."
+        ADDITIONAL_ARGS+=("-p" "2222:22")
     fi
-elif [ -v RM ]; then
-    docker stop -t 0 $NAME > /dev/null
-    docker rm $NAME > /dev/null
-    exit
-elif [ -v STOP ]; then
-    docker stop -t 0 $NAME > /dev/null
-    exit
+    docker run \
+        --hostname=$NAME --name $NAME \
+        -d -it \
+        ${ADDITIONAL_ARGS[@]} \
+        --mount type=bind,source=$HOME/.ssh,target=/home/ddev/.ssh \
+        $NAME-img
 else
-    docker start $NAME > /dev/null
+    if [[ "$ADDITIONAL_ARGS" != "" ]]; then
+        echo "Only use additional arguments with -n|--new"
+        exit 1
+    fi
+    if [ -v DELETE ]; then
+        debug "Stop and remove $NAME..."
+        docker stop -t 0 $NAME > /dev/null
+        docker rm $NAME > /dev/null
+        exit
+    elif [ -v STOP ]; then
+        debug "Stop $NAME..."
+        docker stop -t 0 $NAME > /dev/null
+        exit
+    else
+        debug "Start $NAME..."
+        docker start $NAME > /dev/null
+    fi
 fi
 
 if [ -v ATTACH ]; then
     echo "Directly attach to $NAME. Exit via Ctrl-p + Ctrl+q"
     docker attach $NAME
 else
+    REGEX="([0-9]+)->22"
+    DOCKER_STATUS=$(docker ps -a --filter=name=$NAME)
+    if [[ $DOCKER_STATUS =~ $REGEX ]]; then
+        PORT="${BASH_REMATCH[1]}"
+    else
+        echo "Was not able to determine ssh port from docker ps."
+        echo "Expected $REGEX in:"
+        echo $DOCKER_STATUS
+    fi
+
     set +e
-    echo "Connect to $NAME via ssh."
+    echo "Connect to $NAME via ssh. (Port: $PORT)"
     function connect_ssh {
-        ssh ddev@localhost -p 2222 -q \
+        ssh ddev@localhost -p $PORT -q \
             -o "StrictHostKeyChecking=no" \
             -o "UserKnownHostsFile=/dev/null"
         return $?
