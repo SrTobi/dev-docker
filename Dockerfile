@@ -56,3 +56,5 @@ RUN sudo sh -c "echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config"
 ADD content/ssh-entrypoint.sh /run/entrypoint.sh
 
 ENTRYPOINT ["/run/entrypoint.sh"]
+CMD [ "zsh" ]
+
