@@ -6,8 +6,8 @@ FROM archlinux
 RUN echo 'Server = https://mirror.pkgbuild.com/$repo/os/$arch' > /etc/pacman.d/mirrorlist
 
 # install packages
-RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
-    pacman -Suy --noconfirm --needed \
+#RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
+RUN pacman -Suy --noconfirm --needed \
         base base-devel \
         zsh openssh git vim
 
@@ -30,15 +30,15 @@ RUN mkdir -p /home/ddev/.gnupg && \
 
 # Setup paru
 RUN git clone --depth 1 https://aur.archlinux.org/paru.git
-RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
-    cd paru && \
+#RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
+RUN cd paru && \
     makepkg --noconfirm -si && \
     cd ..
 RUN rm -rf paru
 
 # Install oh-my-zsh and additional stuff
-RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
-    paru --noconfirm -S \
+#RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
+RUN paru --noconfirm -S \
         oh-my-zsh-git kitty-terminfo
 
 # Setup zsh

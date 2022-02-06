@@ -87,7 +87,8 @@ fi
 
 if [ -v NEW ]; then
     debug "Running docker run"
-    DOCKER_BUILDKIT=1 docker build -t $NAME-img .
+    # DOCKER_BUILDKIT=1 docker build -t $NAME-img .
+    docker build -t $NAME-img .
     REGEX=" -p[ 0-9]+:22 "
     if [[ " ${ADDITIONAL_ARGS[@]} " =~ $REGEX ]]; then
         debug "Detected specific portforwarding to ssh. Do not add default forwarding 2222:22."
