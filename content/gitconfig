@@ -12,4 +12,5 @@
     ff = only
 [credential]
     helper = cache --timeout=30000
-
+[core]
+	editor = vim
